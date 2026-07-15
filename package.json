@@ -1,0 +1,29 @@
+{
+  "name": "cigar-manager",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.7.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "dexie": "latest",
+    "echarts": "latest",
+    "pinia": "latest",
+    "vant": "latest",
+    "vue": "latest",
+    "vue-router": "latest",
+    "xlsx": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@vitejs/plugin-vue": "latest",
+    "typescript": "^5.9.3",
+    "vite": "latest",
+    "vite-plugin-pwa": "latest",
+    "vue-tsc": "latest"
+  }
+}
