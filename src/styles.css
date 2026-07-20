@@ -1089,6 +1089,67 @@ body {
 
 .home-section__title button { color: #66697d; }
 
+.import-entry {
+  display: grid;
+  gap: 10px;
+}
+
+.template-download {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgb(101 116 195 / 34%);
+  border-radius: 22px;
+  color: #323233;
+  background: rgb(247 247 252 / 86%);
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.import-confirm-button {
+  height: 44px;
+  border-color: transparent !important;
+  border-radius: 22px;
+  color: #fff !important;
+  background: linear-gradient(135deg, #6574c3, #8176bd) !important;
+  box-shadow: 0 10px 24px rgb(101 116 195 / 18%);
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 1 !important;
+  --van-button-primary-color: #fff;
+  --van-button-primary-background: #6574c3;
+  --van-button-primary-border-color: #6574c3;
+}
+
+.import-preview .import-confirm-button .van-button__text {
+  color: #fff !important;
+}
+
+.password-submit.van-button--disabled,
+.form-actions .van-button--disabled,
+.import-confirm-button.van-button--disabled {
+  border: 1px solid #c9c9dc !important;
+  color: #5f6070 !important;
+  background: linear-gradient(135deg, #e7e7f1, #ddddea) !important;
+  box-shadow: none;
+  opacity: 1 !important;
+  --van-button-disabled-opacity: 1;
+}
+
+.import-preview .import-confirm-button.van-button--disabled .van-button__text {
+  color: #5f6070 !important;
+}
+
+.import-confirm-dialog .van-dialog__confirm,
+.import-confirm-dialog .van-dialog__confirm:active {
+  color: #fff !important;
+  background: linear-gradient(135deg, #6574c3, #8176bd) !important;
+  font-weight: 650;
+}
+
 .quick-action-grid button {
   border-color: #e2e2ef;
   color: #252536;
