@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
 import { db } from '../db/database'
+import { standardBrandName } from './brandLogos'
 import type { BoxInventory, LooseInventory, OperationRecord } from '../types/inventory'
 
 type Row = Record<string, unknown>
@@ -14,6 +15,10 @@ export interface ImportPreview {
 
 const text = (value: unknown): string =>
   value == null || value === '/' ? '' : String(value).trim()
+const brandName = (value: unknown): string => {
+  const raw = text(value)
+  return standardBrandName(raw) ?? raw
+}
 const number = (value: unknown): number => Number(value) || 0
 const now = (): string => new Date().toISOString()
 const uid = (): string => crypto.randomUUID()
@@ -62,7 +67,7 @@ export async function previewWorkbook(file: File): Promise<ImportPreview> {
 
   const boxes: BoxInventory[] = []
   for (const row of rows(workbook, '原盒')) {
-    const brand = text(row['品牌']); const model = text(row['型号']); const itemYear = year(row['年份']); const itemCabinet = cabinet(row['柜号'])
+    const brand = brandName(row['品牌']); const model = text(row['型号']); const itemYear = year(row['年份']); const itemCabinet = cabinet(row['柜号'])
     if (!brand || !model || !itemYear || !itemCabinet || number(row['单盒支数']) <= 0) { skipped += 1; warnings.push(`原盒：${brand} ${model || '未知型号'} 缺少必填字段`); continue }
     const serialNumber = text(row['编号']) || undefined
     const key = serialNumber || `${brand}|${model}|${itemYear}|${itemCabinet}|${number(row['单盒支数'])}`
@@ -74,7 +79,7 @@ export async function previewWorkbook(file: File): Promise<ImportPreview> {
 
   const looseStocks: LooseInventory[] = []
   for (const row of rows(workbook, '散支')) {
-    const brand=text(row['品牌']); const model=text(row['型号']); const itemYear=year(row['年份']); const itemCabinet=cabinet(row['柜号']); const quantity=number(row['支数'])
+    const brand=brandName(row['品牌']); const model=text(row['型号']); const itemYear=year(row['年份']); const itemCabinet=cabinet(row['柜号']); const quantity=number(row['支数'])
     if(!brand||!model||!itemYear||!itemCabinet||quantity<=0){skipped+=1;warnings.push(`散支：${brand} ${model||'未知型号'} 缺少必填字段`);continue}
     const key=`${brand}|${model}|${itemYear}|${itemCabinet}`
     if(looseKeys.has(key)){skipped+=1;continue}
@@ -84,12 +89,12 @@ export async function previewWorkbook(file: File): Promise<ImportPreview> {
 
   const operations: OperationRecord[] = []
   for (const row of rows(workbook, '入库')) {
-    const brand=text(row['品牌']); const model=text(row['型号']); if(!brand||!model)continue
+    const brand=brandName(row['品牌']); const model=text(row['型号']); if(!brand||!model)continue
     const timestamp=excelDate(row['时间']); const snapshot={id:uid(),brand,model,year:year(row['年份']),sticksPerBox:number(row['单盒支数']),cabinet:'',customBoxPrice:number(row['价格（元/盒）']),serialNumber:text(row['编号'])||undefined,source:text(row['渠道'])||undefined,stockedAt:timestamp,createdAt:timestamp,updatedAt:timestamp} as BoxInventory
     operations.push({id:uid(),type:'stock-in',inventoryKind:'box',inventoryId:snapshot.id,occurredAt:timestamp,createdAt:timestamp,quantity:number(row['盒数'])||1,snapshot})
   }
   for (const row of rows(workbook, '出库')) {
-    const brand=text(row['品牌']); const model=text(row['型号']); if(!brand||!model)continue
+    const brand=brandName(row['品牌']); const model=text(row['型号']); if(!brand||!model)continue
     const timestamp=excelDate(row['时间']); const snapshot={id:uid(),brand,model,year:year(row['年份']),sticksPerBox:number(row['单盒支数']),cabinet:cabinet(row['柜号']),customBoxPrice:0,serialNumber:text(row['编号'])||undefined,source:text(row['来源'])||undefined,stockedAt:timestamp,createdAt:timestamp,updatedAt:timestamp} as BoxInventory
     operations.push({id:uid(),type:'stock-out',inventoryKind:'box',inventoryId:snapshot.id,occurredAt:timestamp,createdAt:timestamp,quantity:1,snapshot})
   }
@@ -98,7 +103,7 @@ export async function previewWorkbook(file: File): Promise<ImportPreview> {
     const recordId=text(row['记录ID'])||uid(); if(existingOperationIds.has(recordId)){skipped+=1;continue}
     const operationType=text(row['类型']) as OperationRecord['type']; const inventoryKind=text(row['库存类型']) as OperationRecord['inventoryKind']
     if(!['stock-in','stock-out','unbox','price-change','delete','restore'].includes(operationType)||!['box','loose'].includes(inventoryKind)){skipped+=1;continue}
-    const timestamp=excelDate(row['时间']); const snapshot={id:uid(),brand:text(row['品牌']),model:text(row['型号']),year:0,quantity:number(row['数量']),cabinet:'',customStickPrice:0,stockedAt:timestamp,createdAt:timestamp,updatedAt:timestamp} as LooseInventory
+    const timestamp=excelDate(row['时间']); const snapshot={id:uid(),brand:brandName(row['品牌']),model:text(row['型号']),year:0,quantity:number(row['数量']),cabinet:'',customStickPrice:0,stockedAt:timestamp,createdAt:timestamp,updatedAt:timestamp} as LooseInventory
     operations.push({id:recordId,type:operationType,inventoryKind,inventoryId:snapshot.id,occurredAt:timestamp,createdAt:timestamp,quantity:number(row['数量'])||undefined,outboundReason:(text(row['出库原因'])||undefined) as OperationRecord['outboundReason'],beforePrice:number(row['修改前价格'])||undefined,afterPrice:number(row['修改后价格'])||undefined,note:text(row['备注'])||undefined,snapshot})
     existingOperationIds.add(recordId)
   }

@@ -977,3 +977,20 @@ body {
 .van-field { --van-field-label-color: #5c5f73; }
 .van-search { --van-search-background: transparent; --van-search-content-background: #eeeef7; }
 .van-floating-bubble { --van-floating-bubble-background: #6574c3; }
+
+/* Toast 也是 van-popup；单独恢复高对比背景，避免白字落在白色弹层上。 */
+.van-toast {
+  color: #fff;
+  background: rgb(36 37 53 / 92%);
+  box-shadow: 0 12px 32px rgb(28 29 47 / 20%);
+}
+
+/* iOS 会自动放大字号小于 16px 的可编辑控件。 */
+@media (max-width: 639px) {
+  input:not([type='file']),
+  textarea,
+  select,
+  .van-field__control {
+    font-size: 16px !important;
+  }
+}

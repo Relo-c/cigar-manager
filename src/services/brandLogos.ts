@@ -83,13 +83,30 @@ export function brandSearchText(brand: HabanosBrand): string {
 
 export function standardBrandName(value: string): string | undefined {
   const query = normalizeBrand(value)
-  return habanosBrands.find((brand) =>
-    [brand.name, brand.english, ...brand.aliases].some((name) => normalizeBrand(name) === query)
-  )?.name
+  if (!query) return undefined
+
+  const compactQuery = query.replace(/[\s']+/g, '')
+  const matches = habanosBrands.flatMap((brand) =>
+    [brand.name, brand.english, ...brand.aliases].map((name) => ({
+      brand,
+      alias: normalizeBrand(name).replace(/[\s']+/g, '')
+    }))
+  )
+
+  const exact = matches.find(({ alias }) => alias === compactQuery)
+  if (exact) return exact.brand.name
+
+  // Excel 中常见“高希霸 Cohiba”或“高希霸（Cohiba）”一类组合写法。
+  // 优先匹配更长的名称，避免短别名抢先命中。
+  return matches
+    .filter(({ alias }) => alias.length >= 3 && compactQuery.includes(alias))
+    .sort((a, b) => b.alias.length - a.alias.length)[0]?.brand.name
 }
 
 export function brandLogoUrl(brand: string): string | undefined {
-  const file = logoFiles[normalizeBrand(brand)]
+  const standard = standardBrandName(brand)
+  const file = habanosBrands.find((item) => item.name === standard)?.file
+    ?? logoFiles[normalizeBrand(brand)]
   return file ? `${import.meta.env.BASE_URL}brand-logos/habanos/${file}` : undefined
 }
 export interface HabanosBrand {
