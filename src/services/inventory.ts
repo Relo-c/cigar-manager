@@ -4,7 +4,8 @@ import type {
   InventoryKind,
   LooseInventory,
   OperationRecord,
-  OutboundReason
+  OutboundReason,
+  OutboundUnit
 } from '../types/inventory'
 
 export type BoxInput = Omit<BoxInventory, 'id' | 'createdAt' | 'updatedAt'>
@@ -22,6 +23,7 @@ function operation(
   extras: Partial<OperationRecord> = {}
 ): OperationRecord {
   const now = new Date().toISOString()
+  const storedSnapshot = { ...snapshot } as BoxInventory | LooseInventory
   return {
     id: id(),
     type,
@@ -29,7 +31,7 @@ function operation(
     inventoryId,
     occurredAt: now,
     createdAt: now,
-    snapshot,
+    snapshot: storedSnapshot,
     ...extras
   }
 }
@@ -189,15 +191,86 @@ export async function unboxInventory(
 
 export async function outboundBox(
   box: BoxInventory,
+  quantity: number,
+  unit: OutboundUnit,
   reason: OutboundReason,
   occurredAt: string,
   note?: string
 ): Promise<void> {
-  await db.transaction('rw', [db.boxes, db.operations], async () => {
+  if (unit === 'box') {
+    await db.transaction('rw', [db.boxes, db.operations], async () => {
+      await db.boxes.delete(box.id)
+      await db.operations.add(
+        operation('stock-out', 'box', box.id, box, {
+          quantity: 1,
+          outboundReason: reason,
+          occurredAt,
+          note
+        })
+      )
+    })
+    return
+  }
+
+  if (!Number.isInteger(quantity) || quantity <= 0 || quantity > box.sticksPerBox) {
+    throw new Error('出库支数无效')
+  }
+
+  await db.transaction('rw', [db.boxes, db.looseStocks, db.operations], async () => {
+    const now = new Date().toISOString()
+    const stickPrice = box.customBoxPrice / box.sticksPerBox
+    const remainingQuantity = box.sticksPerBox - quantity
+    const existing = remainingQuantity > 0
+      ? await db.looseStocks
+          .where('[brand+model+year+cabinet]')
+          .equals([box.brand, box.model, box.year, box.cabinet])
+          .first()
+      : undefined
+    let loose: LooseInventory | undefined
+
+    if (remainingQuantity > 0) {
+      loose = existing
+        ? { ...existing, quantity: existing.quantity + remainingQuantity, updatedAt: now }
+        : {
+            id: id(),
+            brand: box.brand,
+            model: box.model,
+            year: box.year,
+            quantity: remainingQuantity,
+            cabinet: box.cabinet,
+            customStickPrice: stickPrice,
+            stockedAt: now,
+            createdAt: now,
+            updatedAt: now
+          }
+      await db.looseStocks.put(loose)
+    }
+
+    const outboundSnapshot: LooseInventory = {
+      id: loose?.id ?? box.id,
+      brand: box.brand,
+      model: box.model,
+      year: box.year,
+      quantity: box.sticksPerBox,
+      cabinet: box.cabinet,
+      customStickPrice: existing?.customStickPrice ?? stickPrice,
+      stockedAt: box.stockedAt,
+      createdAt: box.createdAt,
+      updatedAt: now
+    }
+
     await db.boxes.delete(box.id)
     await db.operations.add(
-      operation('stock-out', 'box', box.id, box, {
-        quantity: 1,
+      operation('unbox', 'box', box.id, box, {
+        quantity: box.sticksPerBox,
+        relatedInventoryId: loose?.id,
+        afterPrice: outboundSnapshot.customStickPrice,
+        note: '按支出库自动拆盒'
+      })
+    )
+    await db.operations.add(
+      operation('stock-out', 'loose', outboundSnapshot.id, outboundSnapshot, {
+        quantity,
         outboundReason: reason,
         occurredAt,
         note
@@ -234,45 +307,4 @@ export async function outboundLoose(
       })
     )
   })
-}
-
-export async function restoreDeleted(record: OperationRecord): Promise<void> {
-  if (record.type !== 'delete' || !record.snapshot) {
-    throw new Error('该记录无法恢复')
-  }
-  await db.transaction(
-    'rw',
-    [db.boxes, db.looseStocks, db.operations],
-    async () => {
-      const now = new Date().toISOString()
-      if (record.inventoryKind === 'box') {
-        const snapshot = record.snapshot as BoxInventory
-        const restored = { ...snapshot, updatedAt: now }
-        await db.boxes.put(restored)
-        await db.operations.add(
-          operation('restore', 'box', restored.id, restored, {
-            quantity: 1,
-            relatedInventoryId: record.id
-          })
-        )
-        return
-      }
-
-      const snapshot = record.snapshot as LooseInventory
-      const existing = await db.looseStocks
-        .where('[brand+model+year+cabinet]')
-        .equals([snapshot.brand, snapshot.model, snapshot.year, snapshot.cabinet])
-        .first()
-      const restored = existing
-        ? { ...existing, quantity: existing.quantity + snapshot.quantity, updatedAt: now }
-        : { ...snapshot, updatedAt: now }
-      await db.looseStocks.put(restored)
-      await db.operations.add(
-        operation('restore', 'loose', restored.id, restored, {
-          quantity: snapshot.quantity,
-          relatedInventoryId: record.id
-        })
-      )
-    }
-  )
 }

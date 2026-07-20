@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { showConfirmDialog, showSuccessToast } from 'vant'
+import { showConfirmDialog, showFailToast, showSuccessToast } from 'vant'
 import BoxForm from '../components/BoxForm.vue'
 import BrandLogo from '../components/BrandLogo.vue'
 import LooseForm from '../components/LooseForm.vue'
@@ -179,26 +179,34 @@ async function selectUnbox(box: BoxInventory): Promise<void> {
       message: `${box.sticksPerBox} 支将转入柜 ${box.cabinet}，默认单支价 ${money.format(stickPrice)}`,
       confirmButtonText: '确认拆盒'
     })
+  } catch {
+    return
+  }
+  try {
     await unboxInventory(box, stickPrice)
     activeAction.value = null
     await load()
     showSuccessToast('拆盒完成')
-  } catch {
-    // User cancelled.
+  } catch (error) {
+    showFailToast(error instanceof Error ? error.message : '拆盒失败，请重试')
   }
 }
 
-async function saveOutbound(value: { quantity: number; reason: import('../types/inventory').OutboundReason; occurredAt: string; note?: string }): Promise<void> {
+async function saveOutbound(value: { quantity: number; unit: import('../types/inventory').OutboundUnit; reason: import('../types/inventory').OutboundReason; occurredAt: string; note?: string }): Promise<void> {
   if (!outboundTarget.value) return
-  if (isBox(outboundTarget.value)) {
-    await outboundBox(outboundTarget.value, value.reason, value.occurredAt, value.note)
-  } else {
-    await outboundLoose(outboundTarget.value, value.quantity, value.reason, value.occurredAt, value.note)
+  try {
+    if (isBox(outboundTarget.value)) {
+      await outboundBox(outboundTarget.value, value.quantity, value.unit, value.reason, value.occurredAt, value.note)
+    } else {
+      await outboundLoose(outboundTarget.value, value.quantity, value.reason, value.occurredAt, value.note)
+    }
+    activeAction.value = null
+    outboundTarget.value = undefined
+    await load()
+    showSuccessToast('出库完成')
+  } catch (error) {
+    showFailToast(error instanceof Error ? error.message : '出库失败，请重试')
   }
-  activeAction.value = null
-  outboundTarget.value = undefined
-  await load()
-  showSuccessToast('出库完成')
 }
 
 onMounted(load)
@@ -287,7 +295,7 @@ onMounted(load)
       <div class="sheet-header"><strong>{{ actionTitle }}</strong><van-icon name="cross" @click="activeAction = null" /></div>
       <BoxForm v-if="activeAction === 'box-in'" @save="saveBox" />
       <LooseForm v-else-if="activeAction === 'loose-in'" @save="saveLoose" />
-      <OutboundForm v-else-if="activeAction === 'stock-out' && outboundTarget" :max-quantity="isBox(outboundTarget) ? 1 : outboundTarget.quantity" :is-box="isBox(outboundTarget)" @save="saveOutbound" />
+      <OutboundForm v-else-if="activeAction === 'stock-out' && outboundTarget" :max-quantity="isBox(outboundTarget) ? outboundTarget.sticksPerBox : outboundTarget.quantity" :is-box="isBox(outboundTarget)" @save="saveOutbound" />
       <div v-else class="action-picker">
         <button v-for="item in selectionItems" :key="item.id" type="button" @click="activeAction === 'unbox' ? selectUnbox(item as BoxInventory) : (outboundTarget = item)">
           <BrandLogo :brand="item.brand" size="sm" />

@@ -10,6 +10,8 @@ export type OperationType =
 
 export type OutboundReason = 'self-use' | 'gift' | 'sale' | 'other'
 
+export type OutboundUnit = 'box' | 'stick'
+
 export interface BoxInventory {
   id: string
   brand: string
