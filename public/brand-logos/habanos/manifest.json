@@ -1,0 +1,33 @@
+{
+  "source": "https://www.habanos.com/en/the-habanos-brands-academia/",
+  "downloadedAt": "2026-07-16",
+  "brands": [
+    { "name": "Cohiba", "file": "cohiba.png" },
+    { "name": "Montecristo", "file": "montecristo.jpg" },
+    { "name": "Romeo y Julieta", "file": "romeo-y-julieta.jpg" },
+    { "name": "Partagás", "file": "partagas.jpg" },
+    { "name": "Hoyo de Monterrey", "file": "hoyo-de-monterrey.png" },
+    { "name": "H. Upmann", "file": "h-upmann.jpg" },
+    { "name": "José L. Piedra", "file": "jose-l-piedra.jpg" },
+    { "name": "Cuaba", "file": "cuaba.jpg" },
+    { "name": "San Cristóbal de La Habana", "file": "san-cristobal-de-la-habana.jpg" },
+    { "name": "Trinidad", "file": "trinidad.jpg" },
+    { "name": "Bolívar", "file": "bolivar.jpg" },
+    { "name": "Fonseca", "file": "fonseca.jpg" },
+    { "name": "Punch", "file": "punch.jpg" },
+    { "name": "Quintero", "file": "quintero.jpg" },
+    { "name": "Vegas Robaina", "file": "vegas-robaina.jpg" },
+    { "name": "Diplomáticos", "file": "diplomaticos.jpg" },
+    { "name": "El Rey del Mundo", "file": "el-rey-del-mundo.jpg" },
+    { "name": "Juan López", "file": "juan-lopez.jpg" },
+    { "name": "La Flor de Cano", "file": "la-flor-de-cano.jpg" },
+    { "name": "La Gloria Cubana", "file": "la-gloria-cubana.jpg" },
+    { "name": "Por Larrañaga", "file": "por-larranaga.jpg" },
+    { "name": "Quai d'Orsay", "file": "quai-d-orsay.jpg" },
+    { "name": "Rafael González", "file": "rafael-gonzalez.jpg" },
+    { "name": "Ramón Allones", "file": "ramon-allones.jpg" },
+    { "name": "Saint Luis Rey", "file": "saint-luis-rey.jpg" },
+    { "name": "Sancho Panza", "file": "sancho-panza.jpg" },
+    { "name": "Vegueros", "file": "vegueros.jpg" }
+  ]
+}

@@ -123,4 +123,6 @@ export async function exportWorkbook(): Promise<void> {
   XLSX.utils.book_append_sheet(workbook,XLSX.utils.json_to_sheet(looseStocks.map((s)=>({'品牌':s.brand,'型号':s.model,'单支价格':s.customStickPrice,'支数':s.quantity,'总价值':s.customStickPrice*s.quantity,'年份':s.year,'柜号':s.cabinet,'入库时间':s.stockedAt,'内部ID':s.id}))), '散支')
   XLSX.utils.book_append_sheet(workbook,XLSX.utils.json_to_sheet(operations.map((o)=>({'类型':o.type,'库存类型':o.inventoryKind,'品牌':o.snapshot?.brand,'型号':o.snapshot?.model,'数量':o.quantity,'出库原因':o.outboundReason,'修改前价格':o.beforePrice,'修改后价格':o.afterPrice,'时间':o.occurredAt,'备注':o.note??'','记录ID':o.id}))), '操作记录')
   XLSX.writeFile(workbook,`cigar-manager-backup-${new Date().toISOString().slice(0,10)}.xlsx`)
+  const timestamp = new Date().toISOString()
+  await db.settings.put({ key: 'lastBackupAt', value: timestamp, updatedAt: timestamp })
 }

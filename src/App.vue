@@ -23,7 +23,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="!auth.initialized" class="loading-screen">
+  <main v-if="route.meta.preview" class="app-shell app-shell--preview">
+    <router-view />
+  </main>
+
+  <div v-else-if="!auth.initialized" class="loading-screen">
     <van-loading size="28px" vertical>正在载入本地数据</van-loading>
   </div>
 
