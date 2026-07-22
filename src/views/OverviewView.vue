@@ -16,7 +16,13 @@ import {
   type LooseInput
 } from '../services/inventory'
 import { useInventoryStore } from '../stores/inventory'
-import type { BoxInventory, LooseInventory, OperationRecord } from '../types/inventory'
+import type {
+  BoxInventory,
+  LooseInventory,
+  OperationRecord,
+  OutboundFormValue
+} from '../types/inventory'
+import { errorMessage } from '../utils/errors'
 
 type HomeAction = 'box-in' | 'loose-in' | 'stock-out' | 'unbox' | null
 
@@ -25,15 +31,7 @@ const operations = ref<OperationRecord[]>([])
 const lastBackupAt = ref<string>()
 const activeAction = ref<HomeAction>(null)
 const outboundTarget = ref<BoxInventory | LooseInventory>()
-const showAction = computed({
-  get: () => activeAction.value !== null,
-  set: (show: boolean) => {
-    if (!show) {
-      activeAction.value = null
-      outboundTarget.value = undefined
-    }
-  }
-})
+const showAction = ref(false)
 
 const money = new Intl.NumberFormat('zh-CN', {
   style: 'currency',
@@ -155,18 +153,24 @@ async function load(): Promise<void> {
 function openAction(action: HomeAction): void {
   outboundTarget.value = undefined
   activeAction.value = action
+  showAction.value = true
+}
+
+function resetAction(): void {
+  activeAction.value = null
+  outboundTarget.value = undefined
 }
 
 async function saveBox(value: BoxInput): Promise<void> {
   await createBox(value)
-  activeAction.value = null
+  showAction.value = false
   await load()
   showSuccessToast('原盒已入库')
 }
 
 async function saveLoose(value: LooseInput): Promise<void> {
   await createOrMergeLoose(value)
-  activeAction.value = null
+  showAction.value = false
   await load()
   showSuccessToast('散支已入库')
 }
@@ -184,15 +188,15 @@ async function selectUnbox(box: BoxInventory): Promise<void> {
   }
   try {
     await unboxInventory(box, stickPrice)
-    activeAction.value = null
+    showAction.value = false
     await load()
     showSuccessToast('拆盒完成')
   } catch (error) {
-    showFailToast(error instanceof Error ? error.message : '拆盒失败，请重试')
+    showFailToast(errorMessage(error, '拆盒失败，请重试'))
   }
 }
 
-async function saveOutbound(value: { quantity: number; unit: import('../types/inventory').OutboundUnit; reason: import('../types/inventory').OutboundReason; occurredAt: string; note?: string }): Promise<void> {
+async function saveOutbound(value: OutboundFormValue): Promise<void> {
   if (!outboundTarget.value) return
   try {
     if (isBox(outboundTarget.value)) {
@@ -200,12 +204,11 @@ async function saveOutbound(value: { quantity: number; unit: import('../types/in
     } else {
       await outboundLoose(outboundTarget.value, value.quantity, value.reason, value.occurredAt, value.note)
     }
-    activeAction.value = null
-    outboundTarget.value = undefined
+    showAction.value = false
     await load()
     showSuccessToast('出库完成')
   } catch (error) {
-    showFailToast(error instanceof Error ? error.message : '出库失败，请重试')
+    showFailToast(errorMessage(error, '出库失败，请重试'))
   }
 }
 
@@ -291,8 +294,14 @@ onMounted(load)
       </div>
     </section>
 
-    <van-popup v-model:show="showAction" position="bottom" round :style="{ maxHeight: '88%' }">
-      <div class="sheet-header"><strong>{{ actionTitle }}</strong><van-icon name="cross" @click="activeAction = null" /></div>
+    <van-popup
+      v-model:show="showAction"
+      position="bottom"
+      round
+      :style="{ maxHeight: '88%' }"
+      @closed="resetAction"
+    >
+      <div class="sheet-header"><strong>{{ actionTitle }}</strong><van-icon name="cross" @click="showAction = false" /></div>
       <BoxForm v-if="activeAction === 'box-in'" @save="saveBox" />
       <LooseForm v-else-if="activeAction === 'loose-in'" @save="saveLoose" />
       <OutboundForm v-else-if="activeAction === 'stock-out' && outboundTarget" :max-quantity="isBox(outboundTarget) ? outboundTarget.sticksPerBox : outboundTarget.quantity" :is-box="isBox(outboundTarget)" @save="saveOutbound" />

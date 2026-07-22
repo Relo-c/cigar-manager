@@ -12,6 +12,14 @@ export type OutboundReason = 'self-use' | 'gift' | 'sale' | 'other'
 
 export type OutboundUnit = 'box' | 'stick'
 
+export interface OutboundFormValue {
+  quantity: number
+  unit: OutboundUnit
+  reason: OutboundReason
+  occurredAt: string
+  note?: string
+}
+
 export interface BoxInventory {
   id: string
   brand: string

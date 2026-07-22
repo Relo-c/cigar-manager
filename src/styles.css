@@ -198,6 +198,12 @@ h1 {
 .stock-card__content { min-width:0; }
 .stock-meta { color:#728078; font-size:12px; }
 .stock-card h2 { margin:6px 0; font-size:18px; }
+.stock-tags { display:flex; min-width:0; flex-wrap:wrap; gap:5px; margin:0 0 8px; }
+.stock-tag { display:inline-flex; min-width:0; max-width:100%; align-items:center; gap:4px; border:1px solid #dddfea; border-radius:999px; padding:3px 8px; color:#6e7480; background:#f4f5f8; font-size:11px; font-weight:600; line-height:1.35; white-space:nowrap; }
+.stock-tag--aging { border-color:#d9daeb; color:#6574a8; background:linear-gradient(135deg,#f2f4ff,#f5f1fb); }
+.stock-tag--source { overflow:hidden; }
+.stock-tag--source span { overflow:hidden; text-overflow:ellipsis; }
+.stock-tag .van-icon { flex:none; font-size:12px; }
 .stock-card p { margin:0; color:#717973; font-size:13px; }
 .stock-value { display:flex; flex-direction:column; align-items:flex-end; gap:18px; color:#285e46; font-weight:700; white-space:nowrap; }
 .brand-logo {
