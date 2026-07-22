@@ -73,7 +73,7 @@ export async function previewWorkbook(file: File): Promise<ImportPreview> {
     const key = serialNumber || `${brand}|${model}|${itemYear}|${itemCabinet}|${number(row['单盒支数'])}`
     if (boxKeys.has(key)) { skipped += 1; continue }
     boxKeys.add(key)
-    const timestamp = now(); const size = dimension(row['环径'])
+    const timestamp = text(row['入库时间']) ? excelDate(row['入库时间']) : now(); const size = dimension(row['环径'])
     boxes.push({ id: uid(), brand, model, year: itemYear, sticksPerBox: number(row['单盒支数']), cabinet: itemCabinet, customBoxPrice: number(row['单盒价格']), serialNumber, source: text(row['来源']) || undefined, ...size, stockedAt: timestamp, createdAt: timestamp, updatedAt: timestamp })
   }
 
@@ -83,7 +83,7 @@ export async function previewWorkbook(file: File): Promise<ImportPreview> {
     if(!brand||!model||!itemYear||!itemCabinet||quantity<=0){skipped+=1;warnings.push(`散支：${brand} ${model||'未知型号'} 缺少必填字段`);continue}
     const key=`${brand}|${model}|${itemYear}|${itemCabinet}`
     if(looseKeys.has(key)){skipped+=1;continue}
-    looseKeys.add(key); const timestamp=now()
+    looseKeys.add(key); const timestamp=text(row['入库时间']) ? excelDate(row['入库时间']) : now()
     looseStocks.push({id:uid(),brand,model,year:itemYear,quantity,cabinet:itemCabinet,customStickPrice:number(row['单支价格']) || (number(row['单盒价格'])/number(row['单盒数量']) || 0),stockedAt:timestamp,createdAt:timestamp,updatedAt:timestamp})
   }
 
